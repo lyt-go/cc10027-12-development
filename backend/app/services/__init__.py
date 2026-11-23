@@ -20,6 +20,7 @@ from app.services.format_output import FormatOutputService
 from app.services.backfill_range import BackfillRangeService
 from app.services.sampling_rule import SamplingRuleService
 from app.services.log_quality import LogQualityService
+from app.services.dimension_attestation import DimensionAttestationService
 
 SERVICES: dict[str, BaseModuleService] = {
     "log_source": LogSourceService(),
@@ -40,6 +41,7 @@ SERVICES: dict[str, BaseModuleService] = {
     "backfill_range": BackfillRangeService(),
     "sampling_rule": SamplingRuleService(),
     "log_quality": LogQualityService(),
+    "dimension_attestation": DimensionAttestationService(),
 }
 
 

@@ -120,3 +120,23 @@ class EnrichJoinService(BaseModuleService):
                 if k == source_key or (isinstance(v, str) and join_key in v):
                     return v
         return None
+
+    # -- 部门维表命中归属凭证（共享部门维表归属核对） --
+
+    def _attestation_service(self):
+        cls = self._safe_import(
+            "app.services.dimension_attestation", "DimensionAttestationService"
+        )
+        return cls()
+
+    def attest_customer_department(
+        self, source_key: str, customer_key: str, line_no: int | None = None
+    ) -> dict[str, Any]:
+        """富化侧入口：为日志行中的客户键生成维表命中归属凭证。"""
+        return self._attestation_service().attest_record(
+            source_key, {"line_no": line_no, "log_file": f"logs/{source_key}.jsonl"}, customer_key
+        )
+
+    def build_conflict_demo(self) -> dict[str, Any]:
+        """富化侧入口：执行线上/离线同客户部门冲突的完整归属核对场景。"""
+        return self._attestation_service().build_conflict_demo()

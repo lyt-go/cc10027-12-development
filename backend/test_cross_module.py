@@ -578,6 +578,15 @@ def test_quality_diagnosis_triggers_alert():
         "质量诊断后的auto_alert应为dict或None"
 
 
+def test_dimension_attestation_conflict():
+    """测试：维表命中归属凭证与部门立方体（同客户两源部门冲突核对）。"""
+    from verify_dim_attestation import test_attestation_workflow
+
+    # 覆盖：私有维表权限隔离、每行只确认一个部门、冲突只入一个未决组、
+    # 立方体保存维表来源与实际命中、跨源同键复查、维表更新后版本化重算。
+    test_attestation_workflow()
+
+
 def test_cross_module_auto_flow():
     """测试：完整跨模块自动触发流程
     流程: log_source.activate -> auto_create parser+buffer+agent ->

@@ -119,3 +119,29 @@ class AggregateOlapService(BaseModuleService):
             "by_source_level": {k: dict(v) for k, v in by_source_level.items()},
             "by_date": dict(by_date),
         }
+
+    # -- 部门立方体：用维表命中归属凭证写入，保留每组维表来源与实际命中 --
+
+    def _attestation_service(self):
+        cls = self._safe_import(
+            "app.services.dimension_attestation", "DimensionAttestationService"
+        )
+        return cls()
+
+    def write_department_cube(self, source_keys: list[str] | None = None, run_label: str = "") -> dict[str, Any]:
+        """聚合侧入口：基于归属凭证写部门立方体（版本化，可回查取数依据）。"""
+        return self._attestation_service().write_department_cube(
+            source_keys=source_keys, run_label=run_label
+        )
+
+    def get_department_cube(self, version: int | None = None) -> dict[str, Any] | None:
+        """回查指定版本的部门立方体；不传版本取当前版。"""
+        return self._attestation_service().get_cube(version)
+
+    def list_department_cube_versions(self) -> list[dict[str, Any]]:
+        """列出历次重算保留下来的立方体版本与身份。"""
+        return self._attestation_service().list_cube_versions()
+
+    def recheck_customer_department(self, customer_key: str) -> dict[str, Any]:
+        """用另一个日志源的同键凭证复查客户的有效部门归属。"""
+        return self._attestation_service().recheck_customer_attribution(customer_key)

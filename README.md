@@ -77,5 +77,37 @@ npm run dev
 - 列表接口统一返回 `{ items, total, page, size }`，动作接口统一返回 `{ ok, message }`。
 - 状态流转只允许在 `app/services` 里改，路由层不做业务判断。
 
+## 维表命中归属凭证（部门归属核对）
+
+`app/services/dimension_attestation.py` 为富化补全“可共享部门维表命中归属”的确认过程，
+解决线上/离线两个日志源对同一客户登记部门冲突时，立方体取数依据无法回查的问题。
+
+规则：
+
+- 每个日志源只能使用自己的私有部门维表，或以 `shared_readonly` 方式取共享客户主档；
+  另一源的私有维表在凭证 `access_scope.forbidden_tables` 中显式记为拒绝。
+- 每行日志只确认一个可核对部门（私有优先、共享只读兜底），候选命中与实际命中
+  （维表名、版本、访问方式、命中部门）全部写入凭证 `attestations.jsonl`。
+- 两个合法维表为同一客户返回不同部门时，行级凭证各自成立，客户级核对判为冲突：
+  该客户在部门立方体里只进 `UNRESOLVED` 一个组，不会被提前计入两个部门组。
+- 维表更新只追加新版本；既有立方体与旧凭证保留原身份，重算生成新的立方体版本。
+- 部门立方体每组保存 `dim_sources_used`（维表来源、版本、访问方式、命中行数）和
+  成员凭证号，可回查每组的取数位置；支持用另一源同键凭证复查有效归属。
+
+主要接口（前缀 `/api/dim-attestation`）：
+
+| 方法与路径 | 说明 |
+| --- | --- |
+| `POST /dim-tables`、`POST /dim-tables/{name}/versions` | 登记部门维表 / 追加新版本 |
+| `POST /logs/ingest` | 接入线上或离线日志（含客户键） |
+| `POST /attestations`、`POST /sources/{source}/attest` | 单行/整源生成命中归属凭证 |
+| `GET /attestations/{id}/recheck` | 按当前维表版本复查旧凭证是否漂移 |
+| `GET /customers/{customer_key}/recheck` | 用另一源同键记录复查有效归属 |
+| `POST /department-cube`、`GET /department-cube`、`GET /department-cube/versions` | 写/查部门立方体及历史版本 |
+| `POST /conflict-demo` | 一键跑通“两源部门冲突→未决单组→更新重算”完整场景 |
+
+验收脚本：`cd backend && .venv/bin/python -I verify_dim_attestation.py`。
+
+
 领域：数据工程
 子方向：数据采集、爬虫与RPA

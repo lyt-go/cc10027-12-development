@@ -283,6 +283,28 @@ class CrossModulePipeline:
         results["duration"] = round(time.time() - started_at, 2)
         return results
 
+    def dimension_attestation_pipeline(self) -> dict[str, Any]:
+        """维表命中归属核对管道：维表登记 -> 归属凭证 -> 部门立方体 -> 同键复查。"""
+        started_at = time.time()
+        from app.services.dimension_attestation import DimensionAttestationService
+
+        attestation = DimensionAttestationService()
+        demo = attestation.build_conflict_demo()
+        return {
+            "pipeline": "dimension_attestation",
+            "stages": {
+                "dim_tables": demo["dim_tables"],
+                "attestation": demo["attestation"],
+                "department_cube_v1": demo["cube_v1"],
+                "cross_source_recheck": demo["cross_source_recheck"],
+                "dim_update": demo["dim_update"],
+                "department_cube_v2": demo["cube_v2"],
+                "recheck_after_update": demo["recheck_after_update"],
+            },
+            "cube_versions": demo["cube_versions"],
+            "duration": round(time.time() - started_at, 2),
+        }
+
     def run_all_pipelines(self) -> dict[str, Any]:
         """运行所有管道组合。"""
         started_at = time.time()
